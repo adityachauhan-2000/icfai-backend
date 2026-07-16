@@ -85,4 +85,5 @@ celerybeat.pid
 .DS_Store
 .DS_Store?
 ._*
-Thumbs.db
+# Thumbs.db
+.vercel
