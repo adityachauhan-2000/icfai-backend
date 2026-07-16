@@ -76,8 +76,9 @@ app.include_router(preparation_router, prefix="/api")
 app.include_router(news_router)
 
 try:
-    os.makedirs("uploads/logos", exist_ok=True)
-    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+    base_dir = "/tmp/uploads" if os.getenv("VERCEL") else "uploads"
+    os.makedirs(os.path.join(base_dir, "logos"), exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=base_dir), name="uploads")
 except (OSError, RuntimeError):
     pass
 

@@ -78,13 +78,18 @@ async def upload_logo(file: UploadFile = File(...)):
     
     file_extension = file.filename.split(".")[-1]
     file_name = f"{uuid.uuid4()}.{file_extension}"
-    file_path = os.path.join("uploads", "logos", file_name)
+    
+    # Use /tmp on Vercel because the main filesystem is read-only
+    base_dir = "/tmp/uploads/logos" if os.getenv("VERCEL") else os.path.join("uploads", "logos")
+    os.makedirs(base_dir, exist_ok=True)
+    
+    file_path = os.path.join(base_dir, file_name)
     
     with open(file_path, "wb") as buffer:
         content = await file.read()
         buffer.write(content)
         
-    return {"url": f"https://icfai-backend-7saqfpox9-adityas-projects-4b60fae5.vercel.app/uploads/logos/{file_name}"}
+    return {"url": f"https://icfai-backend.vercel.app/uploads/logos/{file_name}"}
 
 @router.get("/companies", response_model=List[schemas.CompanyResponse])
 def get_companies(db: Session = Depends(get_db)):
