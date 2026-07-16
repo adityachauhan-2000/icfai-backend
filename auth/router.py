@@ -156,14 +156,14 @@ def upload_student_image(
     file_path = os.path.join("uploads", "profiles", filename)
     
     if current_student.profile_image:
-        old_path = current_student.profile_image.replace("https://icfai-backend-7saqfpox9-adityas-projects-4b60fae5.vercel.app/", "")
+        old_path = current_student.profile_image.replace("https://icfai-backend-production.up.railway.app/", "")
         if os.path.exists(old_path):
             os.remove(old_path)
             
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
         
-    image_url = f"https://icfai-backend-7saqfpox9-adityas-projects-4b60fae5.vercel.app/{file_path.replace(os.sep, '/')}"
+    image_url = f"https://icfai-backend-production.up.railway.app/{file_path.replace(os.sep, '/')}"
     current_student.profile_image = image_url
     db.commit()
     db.refresh(current_student)
@@ -258,7 +258,7 @@ def upload_admin_image(
     
     # Delete old profile image if exists
     if current_admin.profile_image:
-        old_path = current_admin.profile_image.replace("https://icfai-backend-7saqfpox9-adityas-projects-4b60fae5.vercel.app/", "")
+        old_path = current_admin.profile_image.replace("https://icfai-backend-production.up.railway.app/", "")
         if os.path.exists(old_path):
             os.remove(old_path)
     
@@ -267,7 +267,7 @@ def upload_admin_image(
         shutil.copyfileobj(file.file, buffer)
         
     # Update database
-    image_url = f"https://icfai-backend-7saqfpox9-adityas-projects-4b60fae5.vercel.app/{file_path.replace(os.sep, '/')}"
+    image_url = f"https://icfai-backend-production.up.railway.app/{file_path.replace(os.sep, '/')}"
     current_admin.profile_image = image_url
     db.commit()
     db.refresh(current_admin)
