@@ -72,7 +72,7 @@ async def webrtc_sdp(request: Request, current_student: Student = Depends(get_cu
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/upload-logo")
-async def upload_logo(file: UploadFile = File(...)):
+async def upload_logo(request: Request, file: UploadFile = File(...)):
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
     
@@ -89,7 +89,8 @@ async def upload_logo(file: UploadFile = File(...)):
         content = await file.read()
         buffer.write(content)
         
-    return {"url": f"https://icfai-backend-production.up.railway.app/uploads/logos/{file_name}"}
+    base_url = str(request.base_url).rstrip("/")
+    return {"url": f"{base_url}/uploads/logos/{file_name}"}
 
 @router.get("/companies", response_model=List[schemas.CompanyResponse])
 def get_companies(db: Session = Depends(get_db)):
