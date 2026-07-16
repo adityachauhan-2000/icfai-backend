@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 class KiteFishAIService:
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.getenv("KITEFISH_API_KEY")
+        # Using hardcoded key as fallback because Vercel doesn't have access to the local .env
+        self.api_key = api_key or os.getenv("KITEFISH_API_KEY", "932c84dfea66476791f94b5ee80384eb")
         self.base_url = "https://api.kitefishai.com/v1"
         self.headers = {
             "x-api-key": self.api_key
