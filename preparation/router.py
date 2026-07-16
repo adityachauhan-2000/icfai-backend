@@ -84,7 +84,7 @@ async def upload_logo(file: UploadFile = File(...)):
         content = await file.read()
         buffer.write(content)
         
-    return {"url": f"http://localhost:8000/uploads/logos/{file_name}"}
+    return {"url": f"https://icfai-backend-7saqfpox9-adityas-projects-4b60fae5.vercel.app/uploads/logos/{file_name}"}
 
 @router.get("/companies", response_model=List[schemas.CompanyResponse])
 def get_companies(db: Session = Depends(get_db)):
