@@ -1,0 +1,40 @@
+# Environment Variables & Secrets
+.env
+.env.*
+
+# Python & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+wheels/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+.env_venv/
+ENV/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.hypothesis/
+.ruff_cache/
+.mypy_cache/
+
+# Application Logs
+*.log
+logs/
+
+# IDEs & OS-Specific Files
+.idea/
+.vscode/*
+*.swp
+*~
+.DS_Store
