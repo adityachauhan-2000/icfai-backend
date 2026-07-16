@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interview Video & WebRTC Test</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; }
+        .box { border: 1px solid #ccc; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin-right: 10px; }
+        pre { background: #f4f4f4; padding: 15px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-size: 12px; }
+        #status { font-weight: bold; margin-top: 10px; }
+        .videos { display: flex; gap: 20px; margin-top: 10px; }
+        video { width: 100%; max-width: 350px; border-radius: 8px; background: #000; }
+        audio { display: none; }
+    </style>
+</head>
+<body>
+    <h1>Personal Interview (WebRTC Live) Test</h1>
+    <div class="box">
+        <button id="startBtn">Connect to AI</button>
+        <button id="stopBtn" disabled>Stop Connection</button>
+        <div id="status">Ready.</div>
+        <div class="videos">
+            <div>
+                <p><strong>Your Camera:</strong></p>
+                <video id="preview" autoplay muted playsinline></video>
+            </div>
+            <div>
+                <p><strong>AI Voice:</strong></p>
+                <audio id="aiAudio" autoplay controls></audio>
+            </div>
+        </div>
+    </div>
+    
+    <div class="box">
+        <h2>WebRTC Logs & Data Channel</h2>
+        <pre id="logs"></pre>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const status = document.getElementById('status');
+        const preview = document.getElementById('preview');
+        const aiAudio = document.getElementById('aiAudio');
+        const logs = document.getElementById('logs');
+
+        let pc = null;
+        let localStream = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+
+        function logEvent(msg) {
+            console.log(msg);
+            logs.innerText += msg + "\n";
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        startBtn.onclick = async () => {
+            startBtn.disabled = true;
+            status.innerText = "Requesting permissions...";
+            
+            try {
+                // 1. Get Camera and Microphone
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                preview.srcObject = localStream;
+                logEvent("✅ Camera and Microphone accessed.");
+                
+                // Initialize MediaRecorder
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(localStream, { mimeType: 'video/webm' });
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+                mediaRecorder.start(1000);
+
+                // 2. Fetch Session Token
+                status.innerText = "Fetching Session Token...";
+                const sessionRes = await fetch('/test/webrtc/session', { method: 'POST' });
+                const sessionData = await sessionRes.json();
+                const clientSecret = sessionData.value || (sessionData.client_secret && sessionData.client_secret.value);
+                
+                if (!clientSecret) {
+                    throw new Error("Could not find client secret in session response: " + JSON.stringify(sessionData));
+                }
+                
+                logEvent("✅ Session Token received from OpenAI.");
+
+                // 3. Initialize WebRTC Peer Connection
+                pc = new RTCPeerConnection();
+                
+                // Set up Data Channel
+                const dc = pc.createDataChannel("oai-events");
+                dc.addEventListener("open", () => logEvent("💬 Data Channel Opened."));
+                dc.addEventListener("message", (e) => {
+                    const event = JSON.parse(e.data);
+                    if (event.type === "response.audio_transcript.done") {
+                        logEvent(`🤖 Rex: "${event.transcript}"`);
+                    } else if (event.type === "conversation.item.input_audio_transcription.completed") {
+                        logEvent(`👤 You: "${event.transcript}"`);
+                    }
+                });
+
+                // Set up Audio Track Receiver
+                pc.ontrack = (e) => {
+                    logEvent("🎧 Receiving AI Audio Track!");
+                    aiAudio.srcObject = e.streams[0];
+                };
+
+                // Add Local Tracks to PC
+                localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+                // 4. Create SDP Offer
+                status.innerText = "Creating SDP Offer...";
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                logEvent("📡 Sending SDP Offer to proxy...");
+
+                // 5. Exchange SDP with OpenAI via proxy
+                const sdpResp = await fetch('/test/webrtc/sdp', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${clientSecret}`,
+                        'Content-Type': 'application/sdp'
+                    },
+                    body: offer.sdp
+                });
+                
+                const answerSdp = await sdpResp.text();
+                logEvent("📩 Received SDP Answer:\n" + answerSdp);
+                await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+                
+                logEvent("🎉 WebRTC Handshake Complete! AI should speak now.");
+                status.innerText = "Connected!";
+                status.style.color = "green";
+                stopBtn.disabled = false;
+                aiAudio.style.display = "block"; // Show audio controls just in case
+
+            } catch (err) {
+                logEvent("❌ ERROR: " + err.message);
+                status.innerText = "Failed.";
+                startBtn.disabled = false;
+            }
+        };
+
+        stopBtn.onclick = () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.onstop = async () => {
+                    logEvent("⏳ Processing recording...");
+                    status.innerText = "Analyzing recording...";
+                    status.style.color = "blue";
+                    
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const formData = new FormData();
+                    formData.append('interview_video', blob, 'test_interview.webm');
+                    
+                    try {
+                        const res = await fetch('/test/analyze-interview', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json();
+                        logEvent("\n\n📊 FINAL AI REPORT:\n" + JSON.stringify(data, null, 2));
+                        status.innerText = "Analysis Complete!";
+                        status.style.color = "green";
+                    } catch (err) {
+                        logEvent("❌ ERROR during analysis: " + err.message);
+                        status.innerText = "Analysis Failed.";
+                        status.style.color = "red";
+                    }
+                };
+                mediaRecorder.stop();
+            }
+
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(t => t.stop());
+                localStream = null;
+                preview.srcObject = null;
+            }
+            logEvent("🔌 Disconnected.");
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            aiAudio.style.display = "none";
+        };
+    </script>
+</body>
+</html>

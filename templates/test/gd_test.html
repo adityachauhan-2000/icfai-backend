@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GD Audio Test</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; }
+        .box { border: 1px solid #ccc; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin-right: 10px; }
+        pre { background: #f4f4f4; padding: 15px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
+        #status { font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Group Discussion (Audio) Test</h1>
+    <div class="box">
+        <button id="startBtn">Start Recording</button>
+        <button id="stopBtn" disabled>Stop & Analyze</button>
+        <div id="status">Ready.</div>
+    </div>
+    
+    <div class="box">
+        <h2>AI Report Result</h2>
+        <pre id="result">Waiting for input...</pre>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let recordedChunks = [];
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const status = document.getElementById('status');
+        const result = document.getElementById('result');
+
+        startBtn.onclick = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                    status.innerText = "Processing... sending to backend.";
+                    
+                    const formData = new FormData();
+                    formData.append('gd_audio', blob, 'test_gd.webm');
+                    
+                    try {
+                        const res = await fetch('/test/analyze-gd', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json();
+                        result.innerText = JSON.stringify(data, null, 2);
+                        status.innerText = "Done!";
+                    } catch (err) {
+                        status.innerText = "Error: " + err.message;
+                    }
+                };
+                
+                mediaRecorder.start(500);
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                status.innerText = "Recording...";
+                status.style.color = "red";
+            } catch (err) {
+                alert("Microphone access denied: " + err.message);
+            }
+        };
+
+        stopBtn.onclick = () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                status.style.color = "black";
+                status.innerText = "Stopped. Compiling audio...";
+            }
+        };
+    </script>
+</body>
+</html>
