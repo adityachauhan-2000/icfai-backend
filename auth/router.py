@@ -110,15 +110,15 @@ def login_student(response: Response, student_in: StudentLogin, db: Session = De
         key="student_token",
         value=token,
         httponly=True,
-        samesite="lax",
-        secure=False,
+        samesite="none",
+        secure=True,
         max_age=60*24*7*60
     )
     return {"message": "Login successful"}
 
 @router.post("/logout")
 def logout_student(response: Response):
-    response.delete_cookie(key="student_token", httponly=True, samesite="lax", secure=False)
+    response.delete_cookie(key="student_token", httponly=True, samesite="none", secure=True)
     return {"message": "Logout successful"}
 
 @router.get("/student/me", response_model=StudentOut)
@@ -208,15 +208,15 @@ def login_admin(response: Response, admin_in: AdminLogin, db: Session = Depends(
         key="admin_token",
         value=token,
         httponly=True,
-        samesite="lax",
-        secure=False,
+        samesite="none",
+        secure=True,
         max_age=60*24*7*60
     )
     return {"message": "Admin login successful"}
 
 @router.post("/admin/logout")
 def logout_admin(response: Response):
-    response.delete_cookie(key="admin_token", httponly=True, samesite="lax", secure=False)
+    response.delete_cookie(key="admin_token", httponly=True, samesite="none", secure=True)
     return {"message": "Admin logout successful"}
 
 @router.get("/admin/me", response_model=AdminResponse)
