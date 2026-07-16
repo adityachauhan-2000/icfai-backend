@@ -73,8 +73,9 @@ app.include_router(preparation_router, prefix="/api")
 app.include_router(test_router, prefix="/test")
 app.include_router(news_router)
 
-os.makedirs("uploads/logos", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+if not os.getenv("VERCEL"):
+    os.makedirs("uploads/logos", exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def root():
