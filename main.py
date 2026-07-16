@@ -46,7 +46,7 @@ import os
 app = FastAPI()
 
 origins = [
-    "https://icfai-admin-pa9ioll99-adityas-projects-4b60fae5.vercel.app/",
+    "https://icfai-admin-pa9ioll99-adityas-projects-4b60fae5.vercel.app",
     "https://icfai-candidate.vercel.app",
     "https://icfai-admin.vercel.app",
     "http://localhost:3000",
@@ -57,10 +57,11 @@ origins = [
     "http://127.0.0.1:5173",
 ]
 if os.getenv("FRONTEND_URL"):
-    origins.append(os.getenv("FRONTEND_URL"))
+    origins.append(os.getenv("FRONTEND_URL").rstrip("/"))
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=origins,
     allow_origin_regex=".*",
     allow_credentials=True,
     allow_methods=["*"],
