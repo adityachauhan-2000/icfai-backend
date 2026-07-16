@@ -35,9 +35,10 @@ venv.bak/
 # FastAPI / SQLAlchemy / Database Artifacts
 # ==========================================
 # Local SQLite databases (often used during local dev/testing)
-*.db
 *.sqlite
 *.sqlite3
+!icfai.db
+!sql_app.db
 
 # Local file upload directories (if testing uploads locally)
 /uploads/
