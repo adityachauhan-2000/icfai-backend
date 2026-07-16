@@ -46,6 +46,9 @@ import os
 app = FastAPI()
 
 origins = [
+    "https://icfai-admin-pa9ioll99-adityas-projects-4b60fae5.vercel.app/",
+    "https://icfai-candidate.vercel.app",
+    "https://icfai-admin.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",
