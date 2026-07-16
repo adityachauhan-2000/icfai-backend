@@ -38,7 +38,6 @@ from study_plans.router import router as study_plans_router
 from admin.router import router as admin_router
 from case_studies.router import router as case_studies_router
 from preparation.router import router as preparation_router
-from test_router import router as test_router
 from news_router import router as news_router
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -71,7 +70,6 @@ app.include_router(study_plans_router)
 app.include_router(admin_router)
 app.include_router(case_studies_router, prefix="/api")
 app.include_router(preparation_router, prefix="/api")
-app.include_router(test_router, prefix="/test")
 app.include_router(news_router)
 
 try:
