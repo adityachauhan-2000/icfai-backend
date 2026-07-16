@@ -30,7 +30,8 @@ from case_studies.models import CaseStudy, CaseStudyResource
 from preparation.models import Company, InterviewRound
 
 # Database tables will now be created via Alembic migrations
-Base.metadata.create_all(bind=engine)
+if not os.getenv("VERCEL"):
+    Base.metadata.create_all(bind=engine)
 
 from auth.router import router as auth_router
 from study_plans.router import router as study_plans_router
