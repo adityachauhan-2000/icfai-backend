@@ -11,20 +11,35 @@ def seed_db():
     db = SessionLocal()
     
     # 1. Create a dummy student/admin
-    print("Seeding Student...")
-    pwd = get_password_hash("password123")
-    student = db.query(Student).filter(Student.email == "admin@icfai.edu").first()
-    if not student:
-        student = Student(
-            name="ICFAI Admin",
-            email="admin@icfai.edu",
-            phone="1234567890",
-            hash_pass=pwd,
+    from auth.models import Admin
+    print("Seeding Admin and Student credentials...")
+    
+    # Create Admin: admin@admin.com / admin
+    admin_pwd = get_password_hash("admin")
+    admin_user = db.query(Admin).filter(Admin.email == "admin@admin.com").first()
+    if not admin_user:
+        admin_user = Admin(
+            name="Super Admin",
+            email="admin@admin.com",
+            hash_pass=admin_pwd,
             is_active=True
         )
-        db.add(student)
+        db.add(admin_user)
         db.commit()
-        db.refresh(student)
+    
+    # Create Candidate (Student): user@admin.com / user
+    student_pwd = get_password_hash("user")
+    student_user = db.query(Student).filter(Student.email == "user@admin.com").first()
+    if not student_user:
+        student_user = Student(
+            name="Test User",
+            email="user@admin.com",
+            phone="1234567890",
+            hash_pass=student_pwd,
+            is_active=True
+        )
+        db.add(student_user)
+        db.commit()
 
     # 2. Create Programs
     print("Seeding Programs...")
