@@ -145,8 +145,13 @@ def delete_round(round_id: int, db: Session = Depends(get_db)):
 from .models import AptitudeQuestion
 from sqlalchemy.sql.expression import func
 
+from fastapi import Response
+
 @router.get("/rounds/{round_id}/questions", response_model=List[schemas.AptitudeQuestionResponse])
-def get_round_questions(round_id: int, all: bool = False, db: Session = Depends(get_db)):
+def get_round_questions(round_id: int, response: Response, all: bool = False, db: Session = Depends(get_db)):
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     # Pull from the global question bank instead of filtering by round_id
     # since questions were only seeded for round 1
     query = db.query(AptitudeQuestion)
