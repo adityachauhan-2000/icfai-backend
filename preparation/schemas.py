@@ -74,6 +74,14 @@ class CompanyResponse(CompanyBase):
     class Config:
         from_attributes = True
 
+class CompanyMinResponse(BaseModel):
+    id: int
+    name: str
+    icon: str
+    
+    class Config:
+        from_attributes = True
+
 class InterviewResultResponse(BaseModel):
     id: int
     company_id: int
@@ -82,6 +90,7 @@ class InterviewResultResponse(BaseModel):
     gd_analysis: Optional[dict] = None
     interview_analysis: Optional[dict] = None
     overall_score: Optional[int] = None
+    company: Optional[CompanyMinResponse] = None
     
     class Config:
         from_attributes = True

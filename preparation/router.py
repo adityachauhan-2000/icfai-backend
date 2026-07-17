@@ -318,6 +318,13 @@ async def analyze_interview(
     
     return db_result
 
+@router.get("/all-sessions", response_model=List[schemas.InterviewResultResponse])
+def get_all_sessions(current_student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
+    results = db.query(InterviewResult).filter(
+        InterviewResult.student_id == current_student.id
+    ).order_by(InterviewResult.id.desc()).all()
+    return results
+
 @router.get("/sessions/{company_id}", response_model=List[schemas.InterviewResultResponse])
 def get_sessions_for_company(company_id: int, current_student: Student = Depends(get_current_student), db: Session = Depends(get_db)):
     results = db.query(InterviewResult).filter(
