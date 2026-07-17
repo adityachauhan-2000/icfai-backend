@@ -14,7 +14,11 @@ if os.getenv("VERCEL") or os.environ.get("VERCEL_REGION"):
             pass
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{db_path}"
 else:
-    SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
+    db_file_path = os.getenv("DATABASE_PATH", "./sql_app.db")
+    db_dir = os.path.dirname(db_file_path)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///{db_file_path}"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}

@@ -50,7 +50,14 @@ def get_current_student(request: Request, db: Session = Depends(get_db)):
             db.refresh(student)
         return student
 
-    token = request.cookies.get("student_token")
+    token = None
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.replace("Bearer ", "")
+        
+    if not token:
+        token = request.cookies.get("student_token")
+        
     if not token:
         return get_default_student()
     
@@ -121,7 +128,7 @@ def login_student(response: Response, student_in: StudentLogin, db: Session = De
         secure=True,
         max_age=60*24*7*60
     )
-    return {"message": "Login successful"}
+    return {"message": "Login successful", "token": token}
 
 @router.post("/logout")
 def logout_student(response: Response):
