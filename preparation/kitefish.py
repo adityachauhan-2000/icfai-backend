@@ -17,14 +17,19 @@ class KiteFishAIService:
             "x-api-key": self.api_key
         }
 
-    async def create_realtime_session(self, instructions: str = None) -> Dict[str, Any]:
+    async def create_realtime_session(self, instructions: str = None, voice: str = "ash", turn_detection: dict = None) -> Dict[str, Any]:
         """
         Create a WebRTC session using KiteFishAI /v1/realtime/session.
         """
         url = f"{self.base_url}/realtime/session"
-        body = {"model": "kitefish-realtime"}
+        body = {
+            "model": "kitefish-realtime",
+            "voice": voice,
+        }
         if instructions:
             body["instructions"] = instructions
+        if turn_detection:
+            body["turn_detection"] = turn_detection
         
         def make_request():
             return requests.post(url, headers=self.headers, json=body, timeout=10)
@@ -226,6 +231,54 @@ class KiteFishAIService:
             if isinstance(response_obj, dict):
                 raw_content = response_obj.get("content", "").strip()
             else:
+                # Turn detection: use server_vad with longer silence so AI waits
+                # for the candidate to fully finish speaking before responding.
+                turn_detection = {
+                    "type": "server_vad",
+                    "threshold": 0.6,
+                    "prefix_padding_ms": 400,
+                    "silence_duration_ms": 1200,
+                }
+
+                if round_type == "gd":
+                    instructions = (
+                        f"You are Rex, a senior GD Moderator at a Fortune 500 company. "
+                        f"You are moderating a group discussion for {current_student.name} "
+                        f"who is from a {program_name} program background. "
+                        "BEHAVIOR RULES:\n"
+                        "- Begin by warmly but professionally welcoming the candidate by name, briefly introducing yourself as Rex the moderator, and then clearly stating the discussion topic.\n"
+                        "- Speak at a calm, measured pace — like a real human moderator would. Never rush.\n"
+                        "- After asking a question or making a point, STOP and WAIT patiently for the candidate to respond. Do NOT keep talking.\n"
+                        "- Listen carefully to what the candidate says. Acknowledge their points before challenging or probing deeper.\n"
+                        "- Ask follow-up questions based on what they actually said, not generic pre-planned questions.\n"
+                        "- Keep your responses concise (2-3 sentences max per turn). A real moderator doesn't give speeches.\n"
+                        "- Be professional and direct. Challenge weak arguments respectfully.\n"
+                        "- Do NOT repeat yourself or restate the question if the candidate is still speaking."
+                    )
+                else:
+                   instructions = (
+                                        f"You are Rex, a senior Hiring Manager at a Fortune 500 company in India, conducting a personal interview. "
+                                        f"You are interviewing {current_student.name} for a role matching their {program_name} program background. \n\n"
+                                        "CRITICAL LANGUAGE & TONE RULES:\n"
+                                        "- Speak ONLY in English. Never use any other language or mixed dialects.\n"
+                                        "- Adopt the tone of a professional, articulate Indian corporate leader: warm, polite, respectful, yet thorough and evaluative.\n"
+                                        "- Speak at a calm, deliberate, and relaxed pace. Use phrasing like 'Take your time,' 'That is quite interesting,' or 'I appreciate you sharing that.'\n"
+                                        "- Use frequent commas, hyphens, and ellipses (...) in your responses. This naturally forces the voice engine to pause and speak more slowly.\n\n"
+                                        "BEHAVIOR & TURN-TAKING RULES:\n"
+                                        "- The opening: Warmly greet the candidate by name. Introduce yourself as Rex, the hiring manager. Ask a brief, welcoming question to settle them in (e.g., 'Hello {current_student.name}, it is a pleasure to meet you today... How are you doing?') and STOP.\n"
+                                        "- ONE question per turn: Never ask multiple questions at once. Ask your question clearly, then STOP completely and wait for the full response.\n"
+                                        "- Patient listening: Assume the candidate may pause for a few seconds while thinking. Do not rush the conversation.\n"
+                                        "- Active listening: Briefly acknowledge what they just said with natural transition phrases (e.g., 'I see...', 'That makes sense...', 'Right, that is a great point...') before moving to your next question.\n"
+                                        "- Deep probing: Ask tailored follow-up questions based on the details they provide, rather than reading from a generic script.\n"
+                                        "- Keep turns SHORT: Limit your responses to 1 to 3 spoken sentences maximum. Real interviewers do not give monologues.\n"
+                                        "- Clarification: If an answer is too brief or unclear, politely ask them to elaborate (e.g., 'Could you shed some more light on how you handled that specific challenge?')."
+                                )
+                
+                data = await kitefish_service.create_realtime_session(
+                    instructions=instructions,
+                    voice="sage",
+                    turn_detection=turn_detection,
+                )
                 raw_content = ""
             
             if raw_content.startswith("```"):
