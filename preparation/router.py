@@ -267,6 +267,31 @@ async def analyze_interview(
         interview_question=interview_question_text
     )
     
+    # Calculate overall score: aptitude score (correct count, max 60) + LLM score (max 40)
+    aptitude_points = aptitude_data.get("correct", 0)
+    llm_score = final_report.get("overall_score", 0)
+    
+    # Fallback/Scale check: if LLM returned score out of 100 instead of 40, scale it down to 40
+    if llm_score > 40:
+        llm_score = int((llm_score / 100.0) * 40)
+        
+    # Check if candidate did nothing in GD and Personal Interview
+    is_gd_empty = (not gd_transcript or 
+                   "No audio" in gd_transcript or 
+                   "too short or empty" in gd_transcript or
+                   len(gd_transcript.strip()) < 15)
+                   
+    is_interview_empty = (not interview_transcript or 
+                          "No audio" in interview_transcript or 
+                          "too short or empty" in interview_transcript or
+                          len(interview_transcript.strip()) < 15)
+                          
+    if is_gd_empty and is_interview_empty:
+        llm_score = 1  # 1 score for doing nothing in GD and interview
+        
+    calculated_overall_score = min(aptitude_points + llm_score, 100)
+    final_report["overall_score"] = calculated_overall_score
+    
     # Save to database
     db_result = InterviewResult(
         company_id=company_id,
@@ -274,7 +299,7 @@ async def analyze_interview(
         aptitude_score=aptitude_data,
         gd_analysis={"posture": posture_analysis, "question": gd_question_text, "transcript": gd_transcript},
         interview_analysis={"report": final_report, "question": interview_question_text, "transcript": interview_transcript},
-        overall_score=final_report.get("overall_score", 0)
+        overall_score=calculated_overall_score
     )
     
     db.add(db_result)

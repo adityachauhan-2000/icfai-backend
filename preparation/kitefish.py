@@ -169,12 +169,20 @@ class KiteFishAIService:
         
         system_prompt = (
             "You are an expert HR interviewer and evaluator at an enterprise-level recruiting agency. "
-            "Your task is to provide a highly detailed, industry-level final evaluation for a candidate broken down by round. "
-            "You will be given the Aptitude score, GD (Group Discussion) details including the question asked, Interview details including the question asked, and a Video Posture Analysis. "
+            "Your task is to provide an exceptionally rigorous, high-standard evaluation for a candidate broken down by round. "
+            "You will be given the GD (Group Discussion) details including the question asked, Personal Interview details including the question asked, and a Video Posture Analysis. "
+            "You must return an `overall_score` out of 40 points total (GD is worth 20 points, Personal Interview is worth 20 points, which includes posture/behavior evaluation). "
+            "Do NOT include Aptitude in this score (it is scored out of 60 by the backend). "
+            "CRITICAL SCORING RULES:\n"
+            "- You MUST be extremely strict and critical. Grade like a top-tier management consultant evaluator.\n"
+            "- If a candidate did not participate, provided nothing, or if transcripts/posture analysis are placeholder values indicating no attempt (e.g. containing phrases like 'No audio provided', 'No video provided', 'too short or empty', or are empty/whitespace), you MUST assign a score of 0 for that round. If they do nothing in both rounds, `overall_score` MUST be 1 or 2.\n"
+            "- If the candidate's answers are minimal, very short (e.g., under 2-3 sentences), repetitive, or lack substance, assign a maximum of 1 to 3 points out of 20 for that round.\n"
+            "- Actively penalize use of filler words (um, ah, like), grammatical errors, weak vocabulary, or lack of logical structure. Be highly critical of poor communication skills.\n"
+            "- A score above 15 out of 20 should ONLY be given for absolutely flawless, structured, industry-expert-level responses. An average response should score no more than 8 to 10 points out of 20.\n\n"
             "Return ONLY a valid raw JSON object matching the schema below. Do not wrap it in markdown.\n\n"
             "JSON SCHEMA:\n"
             "{\n"
-            "  \"overall_score\": 85,\n"
+            "  \"overall_score\": 12,\n"
             "  \"feedback_summary\": \"Detailed, professional paragraph summarizing overall performance, strengths, and major flaws across all rounds\",\n"
             "  \"gd_feedback\": \"Detailed feedback on how the candidate addressed the specific Group Discussion topic/question.\",\n"
             "  \"interview_feedback\": \"Detailed feedback on how the candidate addressed the specific Personal Interview question.\",\n"
@@ -185,13 +193,12 @@ class KiteFishAIService:
         )
         
         user_content = (
-            f"Aptitude Score: {json.dumps(aptitude_score)}\n\n"
             f"Group Discussion Question Asked: {gd_question}\n"
             f"Group Discussion Transcript: {gd_transcript}\n\n"
             f"Video Posture Analysis (from Interview Video): {posture_analysis}\n\n"
             f"Personal Interview Question Asked: {interview_question}\n"
             f"Personal Interview Transcript: {interview_transcript}\n\n"
-            "Evaluate the candidate and return the JSON."
+            "Evaluate the candidate strictly according to the rules and return the JSON."
         )
 
         body = {
